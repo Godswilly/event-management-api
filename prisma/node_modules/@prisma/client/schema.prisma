@@ -1,29 +1,29 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// prisma/schema.prisma
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
+/// ---------- Generators ----------
 generator client {
   provider = "prisma-client-js"
   output   = "./node_modules/@prisma/client"
 }
 
+/// ---------- Datasource ----------
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+/// ---------- Models ----------
 model User {
   id        Int      @id @default(autoincrement())
-  username  String   @db.VarChar(255)
+  name      String   @db.VarChar(255)
   email     String   @unique @db.VarChar(255)
   password  String   @db.VarChar(255)
-  role      Role?    @default(ATTENDEE)
+  role      Role     @default(ATTENDEE)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+/// ---------- Enums ----------
 enum Role {
   ATTENDEE
   ORGANIZER

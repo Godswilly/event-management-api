@@ -4,7 +4,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  create(_createUserDto: CreateUserDto) {
     return 'This action adds a new user';
   }
 
@@ -16,6 +17,7 @@ export class UsersService {
     return `This action returns a #${id} user`;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   update(id: number, updateUserDto: UpdateUserDto) {
     return `This action updates a #${id} user`;
   }
