@@ -1,14 +1,14 @@
 import {
   IsEmail,
-  IsEnum,
-  IsString,
   IsNotEmpty,
-  MinLength,
+  IsString,
   Matches,
+  MinLength,
+  IsEnum,
 } from 'class-validator';
 import { UserRole } from 'src/enums/user-role.enum';
 
-export class CreateUserDto {
+export class AdminRegisterDto {
   @IsString()
   @IsNotEmpty()
   username: string;
@@ -18,7 +18,7 @@ export class CreateUserDto {
   email: string;
 
   @IsString()
-  @MinLength(6, { message: 'Password must be at least 6 characters long' })
+  @MinLength(6)
   @Matches(/^(?=.*[A-Z])(?=.*\d)/, {
     message:
       'Password must contain at least one uppercase letter and one number',
@@ -26,6 +26,5 @@ export class CreateUserDto {
   password: string;
 
   @IsEnum(UserRole)
-  @IsNotEmpty()
-  role: UserRole;
+  role: UserRole.ADMIN;
 }
