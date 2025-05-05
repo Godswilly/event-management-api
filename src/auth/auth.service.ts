@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import { HashService } from './hash.service';
 import { UserRole } from 'src/enums/user-role.enum';
@@ -35,13 +35,16 @@ export class AuthService {
 
   async validateUser(email: string, plainPassword: string) {
     const user = await this.usersService.findByEmail(email);
-    if (!user) return null;
+
+    if (!user) throw new UnauthorizedException('User not Found!');
 
     const passwordMatches = await this.hashService.verifyPassword(
       user.password,
       plainPassword,
     );
+    if (!passwordMatches)
+      throw new UnauthorizedException('Invalid Credentials');
 
-    return passwordMatches ? user : null;
+    return user;
   }
 }
