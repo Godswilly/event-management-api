@@ -2,16 +2,16 @@ import { Injectable, Inject } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigType } from '@nestjs/config';
-import jwtConfig from '../config/jwt.config';
 import { AuthJwtPayload } from '../types/auth-jwt-payload.type.ts';
+import refreshJwtConfig from '../config/refresh-jwt.config';
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class RefreshJwtStrategy extends PassportStrategy(Strategy, 'refresh-jwt') {
   constructor(
-    @Inject(jwtConfig.KEY)
-    jwtConfiguration: ConfigType<typeof jwtConfig>,
+    @Inject(refreshJwtConfig.KEY)
+    refreshJwtConfiguration: ConfigType<typeof refreshJwtConfig>,
   ) {
-    const secret = jwtConfiguration.secret;
+    const secret = refreshJwtConfiguration.secret;
     if (!secret) {
       throw new Error('JWT secret is not defined');
     }
