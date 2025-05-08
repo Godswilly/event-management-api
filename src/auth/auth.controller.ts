@@ -11,6 +11,7 @@ import { RegisterUserDto } from './dto/register-user.dto';
 import { AuthService } from './auth.service';
 import { AdminRegisterDto } from './dto/admin-register.dto';
 import { LocalAuthGuard } from './guards/local-auth/local-auth.guard';
+import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -29,7 +30,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  async login(@Request() req) {
-    return req.user;
+  async login(@Body() loginDto: LoginDto) {
+    const user = await this.authService.validateUser(
+      loginDto.email,
+      loginDto.password,
+    );
+    return this.authService.login(user);
   }
 }

@@ -5,8 +5,9 @@ import {
   IsNotEmpty,
   MinLength,
   Matches,
+  IsIn,
 } from 'class-validator';
-import { UserRole } from 'src/enums/user-role.enum';
+import { Role } from '@prisma/client';
 
 export class CreateUserDto {
   @IsString()
@@ -25,7 +26,9 @@ export class CreateUserDto {
   })
   password: string;
 
-  @IsEnum(UserRole)
-  @IsNotEmpty()
-  role: UserRole;
+  @IsEnum(Role)
+  @IsIn([Role.ATTENDEE, Role.ORGANIZER], {
+    message: 'Role must be either ATTENDEE or ORGANIZER',
+  })
+  role: Role;
 }

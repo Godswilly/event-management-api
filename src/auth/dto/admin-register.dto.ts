@@ -5,8 +5,9 @@ import {
   Matches,
   MinLength,
   IsEnum,
+  Equals,
 } from 'class-validator';
-import { UserRole } from 'src/enums/user-role.enum';
+import { Role } from '@prisma/client';
 
 export class AdminRegisterDto {
   @IsString()
@@ -25,6 +26,11 @@ export class AdminRegisterDto {
   })
   password: string;
 
-  @IsEnum(UserRole)
-  role: UserRole.ADMIN;
+  // @IsEnum(UserRole)
+  // @Equals(UserRole.ADMIN, { message: 'Only ADMIN role is allowed here' })
+  // role: UserRole;
+
+  @IsEnum(Role)
+  @Equals(Role.ADMIN, { message: 'Only ADMIN role is allowed here' })
+  role: Role;
 }
