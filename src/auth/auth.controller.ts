@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { AuthService } from './auth.service';
@@ -19,18 +20,20 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @HttpCode(HttpStatus.CREATED)
   register(@Body() registerUserDto: RegisterUserDto) {
     return this.authService.registerUser(registerUserDto);
   }
 
   @Post('register/admin')
+  @HttpCode(HttpStatus.CREATED)
   registerAdmin(@Body() adminRegisterDto: AdminRegisterDto) {
     return this.authService.registerAdmin(adminRegisterDto);
   }
 
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(LocalAuthGuard)
   @Post('login')
+  @UseGuards(LocalAuthGuard)
+  @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto) {
     const user = await this.authService.validateUser(
       loginDto.email,
@@ -39,9 +42,46 @@ export class AuthController {
     return this.authService.login(user);
   }
 
-  @UseGuards(RefreshAuthGuard)
   @Post('refresh')
+  @UseGuards(RefreshAuthGuard)
+  @HttpCode(HttpStatus.OK)
   async refreshToken(@Req() req) {
-    return this.authService.refresh(req.user);
+    const currentRefreshToken = req
+      .get('Authorization')
+      ?.replace('Bearer ', '')
+      .trim();
+    const ip = req.ip;
+    const userAgent = req.get('user-agent') || '';
+
+    return this.authService.refresh(
+      req.user,
+      currentRefreshToken,
+      ip,
+      userAgent,
+    );
+  }
+
+  @Post('logout')
+  @UseGuards(RefreshAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async logout(@Req() req) {
+    const refreshToken = req
+      .get('Authorization')
+      ?.replace('Bearer ', '')
+      .trim();
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('No refresh token');
+    }
+
+    return await this.authService.logout(req.user, refreshToken);
+  }
+
+  @Post('logout-all')
+  @UseGuards(RefreshAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async logoutAll(@Req() req) {
+    await this.authService.logoutAll(req.user);
+    return;
   }
 }
