@@ -14,14 +14,15 @@ datasource db {
 
 /// ---------- Models ----------
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @db.VarChar(255)
-  email     String   @unique @db.VarChar(255)
-  password  String   @db.VarChar(255)
-  role      Role     @default(ATTENDEE)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            Int            @id @default(autoincrement())
+  username      String         @db.VarChar(255)
+  email         String         @unique @db.VarChar(255)
+  password      String         @db.VarChar(255)
+  role          Role           @default(ATTENDEE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   refreshTokens RefreshToken[]
+  events        Event[]        @relation("OrganizedEvents")
 }
 
 model RefreshToken {
@@ -39,12 +40,43 @@ model RefreshToken {
   @@index([userId])
   @@index([userId, revoked])
   @@index([token])
-
 }
+
+model Event {
+  id          Int         @id @default(autoincrement())
+  title       String
+  description String?
+  location    String
+  startDate   DateTime
+  endDate     DateTime
+  startTime   String?
+  endTime     String?
+  capacity    Int?
+  category    String?
+  tags        String[]
+  imageUrl    String?
+  organizer   User        @relation("OrganizedEvents", fields: [organizerId], references: [id])
+  organizerId Int
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  timeZone    String?
+  status      EventStatus @default(SCHEDULED)
+
+  @@index([organizerId])
+}
+
 
 /// ---------- Enums ----------
 enum Role {
   ATTENDEE
   ORGANIZER
   ADMIN
+}
+
+enum EventStatus {
+  SCHEDULED
+  ONGOING
+  COMPLETED
+  CANCELLED
+  POSTPONED
 }

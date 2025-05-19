@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import config from './config';
 import { validationSchema } from './config/validation.schema';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { validationSchema } from './config/validation.schema';
     UsersModule,
     AuthModule,
     PrismaModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
