@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -10,12 +15,19 @@ export class UsersService {
   async createUser(createUserDto: CreateUserDto) {
     const { username, email, password, role } = createUserDto;
 
+    // Only allow ADMIN to be set manually
+    if (role && role !== Role.ADMIN) {
+      throw new BadRequestException(
+        'Only ADMIN role can be explicitly assigned. Behavioral roles are inferred.',
+      );
+    }
+
     return this.prisma.user.create({
       data: {
         username,
         email,
         password,
-        role,
+        role: role ?? null,
       },
     });
   }

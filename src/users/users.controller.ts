@@ -10,7 +10,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { ParseIdPipe } from './pipes/parse-int-id.pipe';
+import { ParseIdPipe } from '../pipes/parse-int-id.pipe';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth/jwt-auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
 

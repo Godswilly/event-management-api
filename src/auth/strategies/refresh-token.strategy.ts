@@ -53,7 +53,7 @@ export class RefreshJwtStrategy extends PassportStrategy(
 
     return {
       id: payload.sub,
-      role: payload.role,
+      role: payload.role ?? null,
       ip,
       userAgent,
     };

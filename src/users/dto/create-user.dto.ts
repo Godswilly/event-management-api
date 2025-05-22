@@ -1,11 +1,11 @@
 import {
   IsEmail,
-  IsEnum,
   IsString,
   IsNotEmpty,
   MinLength,
   Matches,
-  IsIn,
+  IsOptional,
+  IsEnum,
 } from 'class-validator';
 import { Role } from '@prisma/client';
 
@@ -26,9 +26,7 @@ export class CreateUserDto {
   })
   password: string;
 
+  @IsOptional()
   @IsEnum(Role)
-  @IsIn([Role.ATTENDEE, Role.ORGANIZER], {
-    message: 'Role must be either ATTENDEE or ORGANIZER',
-  })
-  role: Role;
+  role?: Role | null; // Now optional and can be undefined/null
 }

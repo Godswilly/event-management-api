@@ -4,10 +4,7 @@ import {
   IsString,
   Matches,
   MinLength,
-  IsEnum,
-  IsIn,
 } from 'class-validator';
-import { Role } from '@prisma/client';
 
 export class RegisterUserDto {
   @IsString()
@@ -25,10 +22,4 @@ export class RegisterUserDto {
       'Password must contain at least one uppercase letter and one number',
   })
   password: string;
-
-  @IsEnum(Role)
-  @IsIn([Role.ATTENDEE, Role.ORGANIZER], {
-    message: 'Role must be either ATTENDEE or ORGANIZER',
-  })
-  role: Role;
 }

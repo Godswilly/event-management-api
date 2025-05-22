@@ -26,8 +26,8 @@ export class AuthService {
     return this.usersService.createUser({
       email: data.email,
       username: data.username,
-      role: data.role,
       password: hashedPassword,
+      role: null,
     });
   }
 
@@ -57,7 +57,7 @@ export class AuthService {
   async login(user: User, ip?: string, userAgent?: string) {
     const payload: AuthJwtPayload = {
       sub: user.id,
-      role: user.role,
+      ...(user.role === 'ADMIN' && { role: user.role }),
     };
 
     const accessToken = await this.jwtService.signAsync(payload, {
@@ -89,7 +89,7 @@ export class AuthService {
   }
 
   async refresh(
-    user: { id: number; role: Role },
+    user: { id: number; role: Role | null },
     currentRefreshToken: string,
     ip?: string,
     userAgent?: string,
@@ -108,7 +108,7 @@ export class AuthService {
 
     const payload: AuthJwtPayload = {
       sub: fullUser.id,
-      role: fullUser.role,
+      ...(fullUser.role === 'ADMIN' && { role: fullUser.role }),
     };
 
     const newAccessToken = await this.jwtService.signAsync(payload, {
