@@ -36,7 +36,7 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
-  async findAll() {
+  async getAllUsers() {
     return this.prisma.user.findMany({
       select: {
         id: true,
@@ -48,7 +48,7 @@ export class UsersService {
     });
   }
 
-  async findById(id: number) {
+  async findUserById(id: number) {
     const user = await this.prisma.user.findUnique({
       where: { id },
     });
@@ -60,8 +60,8 @@ export class UsersService {
     return user;
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
-    const user = await this.findById(id);
+  async updateUser(id: number, updateUserDto: UpdateUserDto) {
+    const user = await this.findUserById(id);
 
     return this.prisma.user.update({
       where: { id: user.id },
@@ -69,8 +69,8 @@ export class UsersService {
     });
   }
 
-  async remove(id: number) {
-    const user = await this.findById(id);
+  async deleteUser(id: number) {
+    const user = await this.findUserById(id);
 
     return this.prisma.user.delete({
       where: { id: user.id },

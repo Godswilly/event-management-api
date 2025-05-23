@@ -21,13 +21,13 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @Get()
   findAll() {
-    return this.usersService.findAll();
+    return this.usersService.getAllUsers();
   }
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Param('id', ParseIdPipe) id: number) {
-    return this.usersService.findById(id);
+    return this.usersService.findUserById(id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -36,13 +36,13 @@ export class UsersController {
     @Param('id', ParseIdPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    return this.usersService.update(id, updateUserDto);
+    return this.usersService.updateUser(id, updateUserDto);
   }
 
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
-  remove(@Param('id', ParseIdPipe) id: number) {
-    return this.usersService.remove(id);
+  delete(@Param('id', ParseIdPipe) id: number) {
+    return this.usersService.deleteUser(id);
   }
 }

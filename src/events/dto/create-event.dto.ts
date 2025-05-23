@@ -4,9 +4,9 @@ import {
   IsEnum,
   IsInt,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsString,
+  IsUrl,
   Validate,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -72,6 +72,7 @@ export class CreateEventDto {
 
   @IsOptional()
   @IsString({ message: 'Image URL must be a string.' })
+  @IsUrl(undefined, { message: 'Please enter a valid image URL.' })
   imageUrl?: string;
 
   @IsOptional()

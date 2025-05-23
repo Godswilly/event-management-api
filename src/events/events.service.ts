@@ -1,26 +1,74 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class EventsService {
-  create(createEventDto: CreateEventDto) {
-    return 'This action adds a new event';
+  constructor(private prisma: PrismaService) {}
+
+  async create(createEventDto: CreateEventDto, organizerId: number) {
+    return this.prisma.event.create({
+      data: {
+        ...createEventDto,
+        organizerId,
+      },
+    });
   }
 
-  findAll() {
-    return `This action returns all events`;
+  async getAllEvents() {
+    return this.prisma.event.findMany();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} event`;
+  async getEventById(eventId: number) {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event) throw new NotFoundException('Event not found');
+
+    return event;
   }
 
-  update(id: number, updateEventDto: UpdateEventDto) {
-    return `This action updates a #${id} event`;
+  async getEventsByOrganizer(organizerId: number) {
+    return this.prisma.event.findMany({ where: { organizerId } });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} event`;
+  async updateEvent(
+    eventId: number,
+    updateEventDto: UpdateEventDto,
+    userId: number,
+  ) {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event) throw new NotFoundException('Event not found');
+
+    if (event.organizerId != userId) {
+      throw new ForbiddenException('You are not the organizer of this event');
+    }
+    return this.prisma.event.update({
+      where: { id: eventId },
+      data: updateEventDto,
+    });
+  }
+
+  async deleteEvent(eventId: number, userId: number) {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event) throw new NotFoundException('Event not found');
+
+    if (event.organizerId !== userId) {
+      throw new ForbiddenException('You are not the organizer of this event');
+    }
+
+    return this.prisma.event.delete({ where: { id: eventId } });
   }
 }
