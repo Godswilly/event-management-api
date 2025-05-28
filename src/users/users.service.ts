@@ -76,4 +76,20 @@ export class UsersService {
       where: { id: user.id },
     });
   }
+
+  async hasCreatedEvents(userId: number): Promise<boolean> {
+    const count = await this.prisma.event.count({
+      where: { organizerId: userId },
+    });
+
+    return count > 0;
+  }
+
+  async hasRegisteredForEvents(userId: number): Promise<boolean> {
+    const count = await this.prisma.eventRegistration.count({
+      where: { userId },
+    });
+
+    return count > 0;
+  }
 }

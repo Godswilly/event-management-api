@@ -5,15 +5,16 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Role } from '@prisma/client';
 import { ROLES_KEY } from '../decorators/roles.decorator';
+import { Role } from '@prisma/client';
+import { BehavioralRole } from '../enums/role.enum';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
+    const requiredRoles = this.reflector.getAllAndMerge<string[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
@@ -23,19 +24,29 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const { user } = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest();
+    const user = request.user;
 
     if (!user) {
-      throw new ForbiddenException('Access denied: no user in request');
+      throw new ForbiddenException('User not found in request');
     }
 
-    // Check if user's role is in the allowed roles
-    if (!requiredRoles.includes(user.role)) {
-      throw new ForbiddenException(
-        `Access denied: role '${user.role}' is not allowed. Required: ${requiredRoles.join(', ')}`,
-      );
+    const { role: staticRole, isOrganizer, isAttendee } = user;
+
+    // Check for static ADMIN role
+    if (requiredRoles.includes(Role.ADMIN) && staticRole === Role.ADMIN) {
+      return true;
     }
 
-    return true;
+    // Check for behavioral roles
+    if (requiredRoles.includes(BehavioralRole.ORGANIZER) && isOrganizer) {
+      return true;
+    }
+
+    if (requiredRoles.includes(BehavioralRole.ATTENDEE) && isAttendee) {
+      return true;
+    }
+
+    throw new ForbiddenException('Access denied: insufficient role');
   }
 }

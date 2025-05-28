@@ -20,19 +20,19 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  findAll() {
+  getAllUsers() {
     return this.usersService.getAllUsers();
   }
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  findOne(@Param('id', ParseIdPipe) id: number) {
+  findUserById(@Param('id', ParseIdPipe) id: number) {
     return this.usersService.findUserById(id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
-  update(
+  updateUser(
     @Param('id', ParseIdPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
   ) {
@@ -42,7 +42,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
-  delete(@Param('id', ParseIdPipe) id: number) {
+  deleteUser(@Param('id', ParseIdPipe) id: number) {
     return this.usersService.deleteUser(id);
   }
 }

@@ -94,7 +94,7 @@ export class AuthService {
     ip?: string,
     userAgent?: string,
   ) {
-    const fullUser = await this.usersService.findById(user.id);
+    const fullUser = await this.usersService.findUserById(user.id);
 
     const storedRefreshToken = await this.refreshTokenService.findValidToken(
       fullUser.id,

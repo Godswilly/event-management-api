@@ -6,41 +6,69 @@ import {
   Patch,
   Param,
   Delete,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { ParseIdPipe } from 'src/pipes/parse-int-id.pipe';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { Role } from '@prisma/client';
+import { BehavioralRole } from 'src/common/enums/role.enum';
 
 @Controller('events')
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
-  @Post()
-  create(@Body() createEventDto: CreateEventDto) {
-    return this.eventsService.create(createEventDto);
-  }
-
   @Get()
-  findAll() {
-    return this.eventsService.findAll();
+  getAllEvents() {
+    return this.eventsService.getAllEvents();
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIdPipe) id: number) {
-    return this.eventsService.findOne(id);
+  getEventById(@Param('id', ParseIdPipe) id: number) {
+    return this.eventsService.getEventById(id);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, BehavioralRole.ORGANIZER)
+  @Post()
+  createEvent(@Request() req, @Body() createEventDto: CreateEventDto) {
+    const userId = req.user.id;
+
+    return this.eventsService.createEvent(createEventDto, userId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, BehavioralRole.ORGANIZER)
   @Patch(':id')
-  update(
+  updateEvent(
     @Param('id', ParseIdPipe) id: number,
+    @Request() req,
     @Body() updateEventDto: UpdateEventDto,
   ) {
-    return this.eventsService.update(id, updateEventDto);
+    const userId = req.user.id;
+
+    return this.eventsService.updateEvent(id, updateEventDto, userId);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, BehavioralRole.ORGANIZER)
   @Delete(':id')
-  remove(@Param('id', ParseIdPipe) id: number) {
-    return this.eventsService.remove(id);
+  deleteEvent(@Param('id', ParseIdPipe) id: number, @Request() req) {
+    const userId = req.user.id;
+
+    return this.eventsService.deleteEvent(id, userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/organizer/mine')
+  getMyEvents(@Request() req) {
+    const organizerId = req.user.id;
+
+    return this.eventsService.getEventsByOrganizer(organizerId);
   }
 }

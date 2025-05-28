@@ -1,3 +1,4 @@
-export enum Role {
-  ADMIN = 'ADMIN',
+export enum BehavioralRole {
+  ORGANIZER = 'ORGANIZER',
+  ATTENDEE = 'ATTENDEE',
 }
