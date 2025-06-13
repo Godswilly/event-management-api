@@ -7,6 +7,7 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EventFilterDto } from './dto/event-filter.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class EventsService {
@@ -22,72 +23,92 @@ export class EventsService {
   }
 
   async getAllEvents(filter?: EventFilterDto) {
-    return this.prisma.event.findMany({
-      where: {
-        ...(filter?.title?.trim() && {
-          title: {
-            contains: filter.title.trim(),
-            mode: 'insensitive',
+    const tagsToFilter = filter?.tags
+      ?.map((t) => t.trim())
+      .filter((t) => t.length > 0);
+
+    const where: Prisma.EventWhereInput = {
+      ...(filter?.title?.trim() && {
+        title: {
+          contains: filter.title.trim(),
+          mode: 'insensitive',
+        },
+      }),
+
+      ...(filter?.category?.trim() && {
+        category: {
+          contains: filter.category.trim(),
+          mode: 'insensitive',
+        },
+      }),
+
+      ...(tagsToFilter &&
+        tagsToFilter.length > 0 && {
+          tags: {
+            hasSome: tagsToFilter,
           },
         }),
 
-        ...(filter?.category?.trim() && {
-          category: {
-            contains: filter.category.trim(),
-            mode: 'insensitive',
-          },
-        }),
+      ...(filter?.status && {
+        status: filter.status,
+      }),
 
-        ...(filter?.tag?.trim() && {
-          tag: {
-            has: filter.tag.trim(),
-          },
-        }),
+      ...(filter?.organizerId && {
+        organizerId: filter.organizerId,
+      }),
 
-        ...(filter?.status && {
-          status: filter.status,
-        }),
+      ...(filter?.startDateFrom || filter?.startDateTo
+        ? {
+            startDate: {
+              ...(filter.startDateFrom && { gte: filter.startDateFrom }),
+              ...(filter.startDateTo && { lte: filter.startDateTo }),
+            },
+          }
+        : {}),
 
-        ...(filter?.organizerId && {
-          organizerId: filter.organizerId,
-        }),
+      ...(filter?.timeZone?.trim() && {
+        timeZone: {
+          equals: filter.timeZone.trim(),
+        },
+      }),
 
-        //If the client sends a startDateFrom or startDateTo filter,
-        //use them to construct a range filter on the actual startDate field in the Event model.
-        ...(filter?.startDateFrom || filter?.startDateTo
-          ? {
-              startDate: {
-                ...(filter.startDateFrom && { gte: filter.startDateFrom }),
-                ...(filter.startDateTo && { lte: filter.startDateTo }),
-              },
-            }
-          : {}),
+      ...(filter?.capacityMin !== undefined || filter?.capacityMax !== undefined
+        ? {
+            capacity: {
+              ...(filter?.capacityMin !== undefined && {
+                gte: filter.capacityMin,
+              }),
+              ...(filter?.capacityMax !== undefined && {
+                lte: filter.capacityMax,
+              }),
+            },
+          }
+        : {}),
+    };
 
-        ...(filter?.timeZone?.trim() && {
-          timeZone: {
-            equals: filter.timeZone.trim(),
-          },
-        }),
+    const skip = filter?.skip ?? 0;
+    const take = filter?.take ?? 10;
 
-        //If the client sends a capacityMin or capacityMax filter,
-        //use them to construct a range filter on the actual capacity field in the Event model.
-        ...(filter?.capacityMin || filter?.capacityMax
-          ? {
-              capacity: {
-                ...(filter?.capacityMin != undefined && {
-                  gte: filter.capacityMin,
-                }),
-                ...(filter?.capacityMax != undefined && {
-                  lte: filter.capacityMax,
-                }),
-              },
-            }
-          : {}),
+    const [events, total] = await Promise.all([
+      this.prisma.event.findMany({
+        where,
+        orderBy: { startDate: 'asc' },
+        skip,
+        take,
+      }),
+      this.prisma.event.count({ where }),
+    ]);
+
+    return {
+      data: events,
+      meta: {
+        total,
+        skip,
+        take,
+        page: Math.floor(skip / take) + 1,
+        totalPages: Math.ceil(total / take),
       },
-      orderBy: {
-        startDate: 'asc',
-      },
-    });
+    };
   }
 
   async getEventById(eventId: number) {
@@ -118,9 +139,10 @@ export class EventsService {
 
     if (!event) throw new NotFoundException('Event not found');
 
-    if (event.organizerId != userId) {
+    if (event.organizerId !== userId) {
       throw new ForbiddenException('You are not the organizer of this event');
     }
+
     return this.prisma.event.update({
       where: { id: eventId },
       data: updateEventDto,

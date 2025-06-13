@@ -1,6 +1,7 @@
 import { EventStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsDate,
   IsEnum,
   IsInt,
@@ -19,8 +20,9 @@ export class EventFilterDto {
   category?: string;
 
   @IsOptional()
-  @IsString()
-  tag?: string;
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 
   @IsOptional()
   @IsEnum(EventStatus)
@@ -57,4 +59,16 @@ export class EventFilterDto {
   @IsInt()
   @Min(0)
   capacityMax?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  skip?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  take?: number;
 }
