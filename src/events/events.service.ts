@@ -1,13 +1,15 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EventFilterDto } from './dto/event-filter.dto';
-import { Prisma } from '@prisma/client';
+import { EventRegistration, EventStatus, Prisma } from '@prisma/client';
 
 @Injectable()
 export class EventsService {
@@ -158,5 +160,55 @@ export class EventsService {
     return this.prisma.event.delete({
       where: { id: eventId },
     });
+  }
+
+  async registerForEvent(
+    eventId: number,
+    userId: number,
+  ): Promise<EventRegistration> {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      select: { organizerId: true, status: true },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    const allowedRegistrationStatuses: EventStatus[] = [EventStatus.SCHEDULED];
+
+    if (!allowedRegistrationStatuses.includes(event.status)) {
+      throw new BadRequestException(
+        `This event is not currently open for registration. Current status: ${event.status}`,
+      );
+    }
+
+    if (event.organizerId === userId) {
+      throw new ForbiddenException(
+        'Organizers cannot register for their own event',
+      );
+    }
+
+    try {
+      return this.prisma.eventRegistration.create({
+        data: {
+          eventId,
+          userId,
+        },
+      });
+    } catch (error) {
+      if (
+        error.code === 'P2002' &&
+        Array.isArray(error.meta?.target) &&
+        error.meta.target.includes('eventId') &&
+        error.meta.target.includes('userId')
+      ) {
+        throw new ForbiddenException(
+          'You have already registered for this event',
+        );
+      }
+
+      throw error;
+    }
   }
 }

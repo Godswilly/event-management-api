@@ -73,4 +73,12 @@ export class EventsController {
 
     return this.eventsService.getEventsByOrganizer(organizerId);
   }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, BehavioralRole.ATTENDEE)
+  @Post(':id/register')
+  registerForEvent(@Param('id', ParseIdPipe) id: number, @Request() req) {
+    const userId = req.user.id;
+    return this.eventsService.registerForEvent(id, userId);
+  }
 }
