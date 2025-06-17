@@ -8,6 +8,7 @@ import {
   Delete,
   Request,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -18,14 +19,15 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { BehavioralRole } from 'src/common/enums/role.enum';
+import { EventFilterDto } from './dto/event-filter.dto';
 
 @Controller('events')
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
   @Get()
-  getAllEvents() {
-    return this.eventsService.getAllEvents();
+  getAllEvents(@Query() filter: EventFilterDto) {
+    return this.eventsService.getAllEvents(filter);
   }
 
   @Get(':id')
@@ -52,7 +54,7 @@ export class EventsController {
   ) {
     const userId = req.user.id;
 
-    return this.eventsService.updateEvent(id, updateEventDto, userId);
+    return this.eventsService.updateEvent(id, userId, updateEventDto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

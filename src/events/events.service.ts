@@ -128,38 +128,35 @@ export class EventsService {
     });
   }
 
-  async updateEvent(
-    eventId: number,
-    updateEventDto: UpdateEventDto,
-    userId: number,
-  ) {
+  async isUserEventOwner(eventId: number, userId: number): Promise<void> {
     const event = await this.prisma.event.findUnique({
       where: { id: eventId },
+      select: { organizerId: true },
     });
 
-    if (!event) throw new NotFoundException('Event not found');
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
 
     if (event.organizerId !== userId) {
-      throw new ForbiddenException('You are not the organizer of this event');
+      throw new ForbiddenException('You do not own this event');
     }
+  }
+
+  async updateEvent(eventId: number, userId: number, data: UpdateEventDto) {
+    await this.isUserEventOwner(eventId, userId);
 
     return this.prisma.event.update({
       where: { id: eventId },
-      data: updateEventDto,
+      data,
     });
   }
 
   async deleteEvent(eventId: number, userId: number) {
-    const event = await this.prisma.event.findUnique({
+    await this.isUserEventOwner(eventId, userId);
+
+    return this.prisma.event.delete({
       where: { id: eventId },
     });
-
-    if (!event) throw new NotFoundException('Event not found');
-
-    if (event.organizerId !== userId) {
-      throw new ForbiddenException('You are not the organizer of this event');
-    }
-
-    return this.prisma.event.delete({ where: { id: eventId } });
   }
 }
