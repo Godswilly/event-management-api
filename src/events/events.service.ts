@@ -334,4 +334,17 @@ export class EventsService {
       throw error;
     }
   }
+
+  async isUserRegistered(eventId: number, userId: number): Promise<boolean> {
+    const registration = await this.prisma.eventRegistration.findUnique({
+      where: {
+        eventId_userId: {
+          eventId,
+          userId,
+        },
+      },
+      select: { id: true },
+    });
+    return !!registration;
+  }
 }

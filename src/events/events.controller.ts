@@ -108,4 +108,18 @@ export class EventsController {
     const userId = req.user.id;
     return this.eventsService.cancelRegistration(eventId, userId);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/is-registered')
+  async checkUserRegistration(
+    @Param('id', ParseIdPipe) eventId: number,
+    @Request() req,
+  ) {
+    const userId = req.user.id;
+    const isRegistered = await this.eventsService.isUserRegistered(
+      eventId,
+      userId,
+    );
+    return { registered: isRegistered };
+  }
 }
