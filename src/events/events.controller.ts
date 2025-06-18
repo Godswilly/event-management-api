@@ -81,4 +81,31 @@ export class EventsController {
     const userId = req.user.id;
     return this.eventsService.registerForEvent(id, userId);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/my-registrations')
+  getMyRegistrations(@Request() req) {
+    const userId = req.user.id;
+    return this.eventsService.getRegistrationsByUser(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/:eventId/attendees')
+  getEventAttendees(
+    @Param('eventId', ParseIdPipe) eventId: number,
+    @Request() req,
+  ) {
+    const userId = req.user.id;
+    return this.eventsService.getEventAttendees(eventId, userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('/:eventId/registration/cancel')
+  cancelMyRegistration(
+    @Param('eventId', ParseIdPipe) eventId: number,
+    @Request() req,
+  ) {
+    const userId = req.user.id;
+    return this.eventsService.cancelRegistration(eventId, userId);
+  }
 }

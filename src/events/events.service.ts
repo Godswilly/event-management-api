@@ -9,7 +9,13 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EventFilterDto } from './dto/event-filter.dto';
-import { EventRegistration, EventStatus, Prisma } from '@prisma/client';
+import {
+  EventRegistration,
+  EventStatus,
+  Prisma,
+  User,
+  Event,
+} from '@prisma/client';
 
 @Injectable()
 export class EventsService {
@@ -208,6 +214,123 @@ export class EventsService {
         );
       }
 
+      throw error;
+    }
+  }
+
+  async getRegistrationsByUser(userId: number): Promise<
+    (EventRegistration & {
+      event: Pick<
+        Event,
+        'id' | 'title' | 'startDate' | 'endDate' | 'location' | 'status'
+      >;
+    })[]
+  > {
+    return this.prisma.eventRegistration.findMany({
+      where: { userId },
+      include: {
+        event: {
+          select: {
+            id: true,
+            title: true,
+            startDate: true,
+            endDate: true,
+            location: true,
+            status: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  async getEventAttendees(
+    eventId: number,
+    userId: number,
+  ): Promise<
+    (EventRegistration & { user: Pick<User, 'id' | 'username' | 'email'> })[]
+  > {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      select: { organizerId: true },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+
+    const isAdmin = user?.role === 'ADMIN';
+    const isOrganizer = event.organizerId === userId;
+
+    if (!isAdmin && !isOrganizer) {
+      throw new ForbiddenException(
+        'You are not authorized to view attendees for this event.',
+      );
+    }
+
+    return this.prisma.eventRegistration.findMany({
+      where: { eventId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+  }
+
+  async cancelRegistration(
+    eventId: number,
+    userId: number,
+  ): Promise<EventRegistration> {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      select: { status: true },
+    });
+
+    if (!event) {
+      throw new NotFoundException('Event not found.');
+    }
+
+    const disallowedStatuses: EventStatus[] = [
+      EventStatus.COMPLETED,
+      EventStatus.CANCELLED,
+    ];
+
+    if (disallowedStatuses.includes(event.status)) {
+      throw new BadRequestException(
+        `Cannot cancel registration for an event that is "${event.status}".`,
+      );
+    }
+
+    try {
+      return await this.prisma.eventRegistration.delete({
+        where: {
+          eventId_userId: { eventId, userId },
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException(
+          'You are not registered for this event, or it has already been cancelled.',
+        );
+      }
       throw error;
     }
   }
