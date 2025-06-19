@@ -347,4 +347,32 @@ export class EventsService {
     });
     return !!registration;
   }
+
+  async getRegistrationDetails(eventId: number, userId: number) {
+    const registration = await this.prisma.eventRegistration.findUnique({
+      where: {
+        eventId_userId: { eventId, userId },
+      },
+      include: {
+        event: {
+          select: {
+            id: true,
+            title: true,
+            startDate: true,
+            status: true,
+            location: true,
+          },
+        },
+      },
+    });
+
+    if (!registration) {
+      throw new NotFoundException('You are not registered for this event.');
+    }
+
+    return {
+      registeredAt: registration.createdAt,
+      event: registration.event,
+    };
+  }
 }

@@ -122,4 +122,13 @@ export class EventsController {
     );
     return { registered: isRegistered };
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/registration')
+  getRegistrationDetails(
+    @Param('id', ParseIdPipe) eventId: number,
+    @Request() req,
+  ) {
+    return this.eventsService.getRegistrationDetails(eventId, req.user.id);
+  }
 }
