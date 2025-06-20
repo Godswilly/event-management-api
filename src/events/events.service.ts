@@ -1,3 +1,4 @@
+import { registerAs } from '@nestjs/config';
 import {
   BadRequestException,
   ForbiddenException,
@@ -16,6 +17,10 @@ import {
   User,
   Event,
 } from '@prisma/client';
+
+type EventWithAvailableSlots = Event & {
+  availableSlots: number | null;
+};
 
 @Injectable()
 export class EventsService {
@@ -74,6 +79,13 @@ export class EventsService {
           }
         : {}),
 
+      ...(filter?.location?.trim() && {
+        location: {
+          contains: filter.location.trim(),
+          mode: 'insensitive',
+        },
+      }),
+
       ...(filter?.timeZone?.trim() && {
         timeZone: {
           equals: filter.timeZone.trim(),
@@ -103,12 +115,29 @@ export class EventsService {
         orderBy: { startDate: 'asc' },
         skip,
         take,
+        include: {
+          _count: { select: { registrations: true } },
+        },
       }),
       this.prisma.event.count({ where }),
     ]);
 
+    const transformed = events.map((event) => {
+      const availableSlots =
+        event.capacity !== null
+          ? event.capacity - event._count.registrations
+          : null;
+
+      const { _count, ...rest } = event;
+
+      return {
+        ...rest,
+        availableSlots,
+      };
+    });
+
     return {
-      data: events,
+      data: transformed,
       meta: {
         total,
         skip,
@@ -119,14 +148,43 @@ export class EventsService {
     };
   }
 
-  async getEventById(eventId: number) {
+  async getEventById(eventId: number): Promise<EventWithAvailableSlots> {
     const event = await this.prisma.event.findUnique({
       where: { id: eventId },
+      include: {
+        _count: {
+          select: { registrations: true },
+        },
+      },
     });
 
     if (!event) throw new NotFoundException('Event not found');
 
-    return event;
+    const availableSlots =
+      event.capacity !== null
+        ? event.capacity - event._count.registrations
+        : null;
+
+    return {
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      location: event.location,
+      startDate: event.startDate,
+      endDate: event.endDate,
+      startTime: event.startTime,
+      endTime: event.endTime,
+      capacity: event.capacity,
+      category: event.category,
+      tags: event.tags,
+      imageUrl: event.imageUrl,
+      organizerId: event.organizerId,
+      timeZone: event.timeZone,
+      status: event.status,
+      createdAt: event.createdAt,
+      updatedAt: event.updatedAt,
+      availableSlots,
+    };
   }
 
   async getEventsByOrganizer(organizerId: number) {
@@ -174,7 +232,14 @@ export class EventsService {
   ): Promise<EventRegistration> {
     const event = await this.prisma.event.findUnique({
       where: { id: eventId },
-      select: { organizerId: true, status: true },
+      select: {
+        organizerId: true,
+        status: true,
+        capacity: true,
+        _count: {
+          select: { registrations: true },
+        },
+      },
     });
 
     if (!event) {
