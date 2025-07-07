@@ -188,10 +188,29 @@ export class EventsService {
   }
 
   async getEventsByOrganizer(organizerId: number) {
-    return this.prisma.event.findMany({
+    const events = await this.prisma.event.findMany({
       where: { organizerId },
+      select: {
+        id: true,
+        title: true,
+        startDate: true,
+        endDate: true,
+        status: true,
+        capacity: true,
+        _count: {
+          select: { registrations: true },
+        },
+      },
       orderBy: { startDate: 'asc' },
     });
+
+    return events.map((event) => ({
+      ...event,
+      availableSlots:
+        event.capacity !== null
+          ? event.capacity - event._count.registrations
+          : null,
+    }));
   }
 
   async isUserEventOwner(eventId: number, userId: number): Promise<void> {
@@ -284,14 +303,18 @@ export class EventsService {
   }
 
   async getRegistrationsByUser(userId: number): Promise<
-    (EventRegistration & {
-      event: Pick<
-        Event,
-        'id' | 'title' | 'startDate' | 'endDate' | 'location' | 'status'
-      >;
-    })[]
+    {
+      id: number;
+      title: string;
+      startDate: Date;
+      endDate: Date;
+      location: string;
+      status: EventStatus;
+      capacity: number | null;
+      availableSlots: number | null;
+    }[]
   > {
-    return this.prisma.eventRegistration.findMany({
+    const registrations = await this.prisma.eventRegistration.findMany({
       where: { userId },
       include: {
         event: {
@@ -302,6 +325,10 @@ export class EventsService {
             endDate: true,
             location: true,
             status: true,
+            capacity: true,
+            _count: {
+              select: { registrations: true },
+            },
           },
         },
       },
@@ -309,6 +336,14 @@ export class EventsService {
         createdAt: 'desc',
       },
     });
+
+    return registrations.map((reg) => ({
+      ...reg.event,
+      availableSlots:
+        reg.event.capacity !== null
+          ? reg.event.capacity - reg.event._count.registrations
+          : null,
+    }));
   }
 
   async getEventAttendees(

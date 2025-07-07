@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
@@ -8,6 +9,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import config from './config';
 import { validationSchema } from './config/validation.schema';
 import { EventsModule } from './events/events.module';
+import { AppEmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -22,10 +24,12 @@ import { EventsModule } from './events/events.module';
         '.env',
       ],
     }),
+    ScheduleModule.forRoot(),
     UsersModule,
     AuthModule,
     PrismaModule,
     EventsModule,
+    AppEmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
