@@ -14,6 +14,8 @@ import { AdminRegisterDto } from './dto/admin-register.dto';
 import { LocalAuthGuard } from './guards/local-auth/local-auth.guard';
 import { LoginDto } from './dto/login.dto';
 import { RefreshAuthGuard } from './guards/refresh-auth/refresh-auth.guard';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { RequestResetDto } from './dto/request-reset.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -59,6 +61,18 @@ export class AuthController {
       ip,
       userAgent,
     );
+  }
+
+  @Post('password-reset/request')
+  async requestPasswordReset(@Body() dto: RequestResetDto) {
+    await this.authService.requestPasswordReset(dto.email);
+    return { message: 'If this email exists, a reset link has been sent.' };
+  }
+
+  @Post('password-reset/confirm')
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.authService.resetPassword(dto.token, dto.newPassword);
+    return { message: 'Password reset successful.' };
   }
 
   @Post('logout')
