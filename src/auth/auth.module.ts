@@ -12,6 +12,7 @@ import refreshJwtConfig from './config/refresh-jwt.config';
 import { RefreshJwtStrategy } from './strategies/refresh-token.strategy';
 import { RefreshTokenService } from './refresh-token.service';
 import { PrismaModule } from 'src/prisma/prisma.module';
+import { PasswordResetCleanupService } from './password-reset-cleanup.service';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { PrismaModule } from 'src/prisma/prisma.module';
     AuthService,
     HashService,
     RefreshTokenService,
+    PasswordResetCleanupService,
     LocalStrategy,
     JwtStrategy,
     RefreshJwtStrategy,
