@@ -1,3 +1,4 @@
+import { ThrottlerGuard } from '@nestjs/throttler';
 import {
   Body,
   Controller,
@@ -64,6 +65,7 @@ export class AuthController {
   }
 
   @Post('password-reset/request')
+  @UseGuards(ThrottlerGuard)
   async requestPasswordReset(@Body() dto: RequestResetDto) {
     await this.authService.requestPasswordReset(dto.email);
     return { message: 'If this email exists, a reset link has been sent.' };

@@ -10,6 +10,7 @@ import config from './config';
 import { validationSchema } from './config/validation.schema';
 import { EventsModule } from './events/events.module';
 import { AppEmailModule } from './email/email.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -22,6 +23,15 @@ import { AppEmailModule } from './email/email.module';
         `.env.${process.env.NODE_ENV}`,
         '.env.local',
         '.env',
+      ],
+    }),
+
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60,
+          limit: 5,
+        },
       ],
     }),
     ScheduleModule.forRoot(),
