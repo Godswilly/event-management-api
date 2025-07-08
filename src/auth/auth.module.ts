@@ -13,11 +13,13 @@ import { RefreshJwtStrategy } from './strategies/refresh-token.strategy';
 import { RefreshTokenService } from './refresh-token.service';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { PasswordResetCleanupService } from './password-reset-cleanup.service';
+import { AppEmailModule } from 'src/email/email.module';
 
 @Module({
   imports: [
     PrismaModule,
     UsersModule,
+    AppEmailModule,
     JwtModule.registerAsync(jwtConfig.asProvider()),
     ConfigModule.forFeature(jwtConfig),
     ConfigModule.forFeature(refreshJwtConfig),

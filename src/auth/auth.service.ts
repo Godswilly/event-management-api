@@ -152,7 +152,7 @@ export class AuthService {
     if (!user) return;
 
     const token = randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 60);
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 15);
 
     await this.prisma.passwordResetToken.updateMany({
       where: {
@@ -181,6 +181,7 @@ export class AuthService {
       {
         username: user.username,
         resetLink: `http://localhost:3000/reset-password?token=${token}`,
+        expires: expiresAt.toLocaleString(),
       },
     );
   }
