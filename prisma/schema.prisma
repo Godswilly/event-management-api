@@ -80,12 +80,13 @@ model Event {
 }
 
 model EventRegistration {
-  id        Int      @id @default(autoincrement())
-  event     Event    @relation(fields: [eventId], references: [id])
-  eventId   Int
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int
-  createdAt DateTime @default(now())
+  id             Int        @id @default(autoincrement())
+  event          Event      @relation(fields: [eventId], references: [id])
+  eventId        Int
+  user           User       @relation(fields: [userId], references: [id])
+  userId         Int
+  reminderSentAt DateTime?
+  createdAt DateTime        @default(now())
 
   @@unique([eventId, userId]) // Prevent duplicate registrations
   @@index([userId])
