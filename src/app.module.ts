@@ -11,6 +11,7 @@ import { validationSchema } from './config/validation.schema';
 import { EventsModule } from './events/events.module';
 import { AppEmailModule } from './email/email.module';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     PrismaModule,
     EventsModule,
     AppEmailModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -9,7 +9,7 @@ import { HashService } from './hash.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { AdminRegisterDto } from './dto/admin-register.dto';
 import { JwtService } from '@nestjs/jwt';
-import { Role, User, PasswordResetToken } from '@prisma/client';
+import { Role, User } from '@prisma/client';
 import { EmailService } from 'src/email/email.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthJwtPayload } from './types/auth-jwt-payload.type.ts';

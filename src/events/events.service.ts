@@ -1,10 +1,8 @@
-import { registerAs } from '@nestjs/config';
 import {
   BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
