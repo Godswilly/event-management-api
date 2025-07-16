@@ -12,4 +12,10 @@ export class AdminController {
   getAllUsers() {
     return this.adminService.getAllUsers();
   }
+
+  @UseGuards(JwtAuthGuard, IsAdminGuard)
+  @Get('events')
+  getAllEventsForAdmin() {
+    return this.adminService.getAllEvents();
+  }
 }

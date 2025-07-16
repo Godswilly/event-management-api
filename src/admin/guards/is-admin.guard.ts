@@ -9,7 +9,9 @@ import {
 export class IsAdminGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
-    if (request.user?.role !== 'ADMIN') {
+    const user = request.user;
+
+    if (user?.role !== 'ADMIN') {
       throw new ForbiddenException('Only admins can access this resource.');
     }
     return true;

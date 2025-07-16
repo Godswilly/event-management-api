@@ -19,4 +19,35 @@ export class AdminService {
       },
     });
   }
+
+  async getAllEvents() {
+    const events = await this.prisma.event.findMany({
+      include: {
+        _count: {
+          select: { registrations: true },
+        },
+        organizer: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return events.map((event) => ({
+      id: event.id,
+      title: event.title,
+      startDate: event.startDate,
+      endDate: event.endDate,
+      status: event.status,
+      capacity: event.capacity,
+      registrations: event._count.registrations,
+      organizer: event.organizer,
+    }));
+  }
 }
