@@ -18,4 +18,10 @@ export class AdminController {
   getAllEventsForAdmin() {
     return this.adminService.getAllEvents();
   }
+
+  @UseGuards(JwtAuthGuard, IsAdminGuard)
+  @Get('registrations')
+  getAllRegistrations() {
+    return this.adminService.getAllRegistrations();
+  }
 }

@@ -50,4 +50,28 @@ export class AdminService {
       organizer: event.organizer,
     }));
   }
+
+  async getAllRegistrations() {
+    const registrations = await this.prisma.eventRegistration.findMany({
+      include: {
+        user: {
+          select: { id: true, username: true, email: true },
+        },
+        event: {
+          select: { id: true, title: true, startDate: true, status: true },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return registrations.map((reg) => ({
+      id: reg.id,
+      createdAt: reg.createdAt,
+      user: reg.user,
+      event: reg.event,
+      reminderSentAt: reg.reminderSentAt,
+    }));
+  }
 }
