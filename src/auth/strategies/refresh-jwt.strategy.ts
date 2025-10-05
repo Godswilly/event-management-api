@@ -5,7 +5,9 @@ import { Request } from 'express';
 import { ConfigType } from '@nestjs/config';
 import refreshJwtConfig from '../config/refresh-jwt.config';
 import { RefreshTokenService } from '../refresh-token.service';
-import { AuthJwtPayload } from '../types/auth-jwt-payload.type.ts';
+import { AuthJwtPayload } from '../types/auth-jwt-payload.type';
+import { extractBearerTokenOrThrow } from 'src/common/utils/token-extractor';
+import { UserRole } from '@prisma/client';
 
 @Injectable()
 export class RefreshJwtStrategy extends PassportStrategy(
@@ -30,17 +32,19 @@ export class RefreshJwtStrategy extends PassportStrategy(
     });
   }
 
-  async validate(req: Request, payload: AuthJwtPayload) {
-    const refreshToken = req
-      .get('Authorization')
-      ?.replace('Bearer ', '')
-      .trim();
+  async validate(
+    req: Request,
+    payload: AuthJwtPayload,
+  ): Promise<{
+    id: number;
+    role: UserRole;
+    refresh_token_id: number;
+    ip?: string;
+    userAgent?: string;
+  }> {
+    const refreshToken = extractBearerTokenOrThrow(req);
     const ip = req.ip;
     const userAgent = req.get('user-agent') || '';
-
-    if (!refreshToken) {
-      throw new UnauthorizedException('No refresh token provided');
-    }
 
     const stored = await this.refreshTokenService.findValidToken(
       payload.sub,
@@ -53,7 +57,8 @@ export class RefreshJwtStrategy extends PassportStrategy(
 
     return {
       id: payload.sub,
-      role: payload.role ?? null,
+      role: payload.role,
+      refresh_token_id: payload.refresh_token_id,
       ip,
       userAgent,
     };

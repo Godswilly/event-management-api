@@ -1,4 +1,4 @@
-import { Role } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { EventsService } from './../events.service';
 import {
   BadRequestException,
@@ -20,7 +20,7 @@ export class IsOrganizerGuard implements CanActivate {
       throw new ForbiddenException('User not authenticated');
     }
 
-    if (user.role === Role.ADMIN) return true;
+    if (user.role === UserRole.ADMIN) return true;
 
     const eventId = parseInt(request.params.id, 10);
     if (isNaN(eventId)) {

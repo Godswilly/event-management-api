@@ -17,7 +17,7 @@ import { ParseIdPipe } from 'src/pipes/parse-int-id.pipe';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
-import { Role } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { BehavioralRole } from 'src/common/enums/role.enum';
 import { EventFilterDto } from './dto/event-filter.dto';
 
@@ -36,7 +36,7 @@ export class EventsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, BehavioralRole.ORGANIZER)
+  @Roles(UserRole.ADMIN, BehavioralRole.ORGANIZER)
   @Post()
   createEvent(@Request() req, @Body() createEventDto: CreateEventDto) {
     const userId = req.user.id;
@@ -45,7 +45,7 @@ export class EventsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, BehavioralRole.ORGANIZER)
+  @Roles(UserRole.ADMIN, BehavioralRole.ORGANIZER)
   @Patch(':id')
   updateEvent(
     @Param('id', ParseIdPipe) id: number,
@@ -58,7 +58,7 @@ export class EventsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, BehavioralRole.ORGANIZER)
+  @Roles(UserRole.ADMIN, BehavioralRole.ORGANIZER)
   @Delete(':id')
   deleteEvent(@Param('id', ParseIdPipe) id: number, @Request() req) {
     const userId = req.user.id;
@@ -75,7 +75,7 @@ export class EventsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, BehavioralRole.ATTENDEE)
+  @Roles(UserRole.ADMIN, BehavioralRole.ATTENDEE)
   @Post(':id/register')
   registerForEvent(@Param('id', ParseIdPipe) id: number, @Request() req) {
     const userId = req.user.id;

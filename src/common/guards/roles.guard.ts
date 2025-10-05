@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
-import { Role } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { BehavioralRole } from '../enums/role.enum';
 
 @Injectable()
@@ -34,7 +34,10 @@ export class RolesGuard implements CanActivate {
     const { role: staticRole, isOrganizer, isAttendee } = user;
 
     // Check for static ADMIN role
-    if (requiredRoles.includes(Role.ADMIN) && staticRole === Role.ADMIN) {
+    if (
+      requiredRoles.includes(UserRole.ADMIN) &&
+      staticRole === UserRole.ADMIN
+    ) {
       return true;
     }
 

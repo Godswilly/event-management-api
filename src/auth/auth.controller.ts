@@ -7,8 +7,8 @@ import {
   HttpCode,
   HttpStatus,
   Req,
-  UnauthorizedException,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { AuthService } from './auth.service';
 import { AdminRegisterDto } from './dto/admin-register.dto';
@@ -48,20 +48,35 @@ export class AuthController {
   @Post('refresh')
   @UseGuards(RefreshAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async refreshToken(@Req() req) {
-    const currentRefreshToken = req
-      .get('Authorization')
-      ?.replace('Bearer ', '')
-      .trim();
-    const ip = req.ip;
+  async refreshToken(@Req() req: Request) {
+    if (!req.user) {
+      throw new Error('User not found on request');
+    }
+
+    const ip = req.ip ?? '';
     const userAgent = req.get('user-agent') || '';
 
-    return this.authService.refresh(
-      req.user,
-      currentRefreshToken,
-      ip,
-      userAgent,
-    );
+    return this.authService.refresh(req.user, ip, userAgent);
+  }
+
+  @Post('logout')
+  @UseGuards(RefreshAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async logout(@Req() req: Request) {
+    if (req.user) {
+      await this.authService.logout(req.user);
+    }
+    return;
+  }
+
+  @Post('logout-all')
+  @UseGuards(RefreshAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async logoutAll(@Req() req: Request) {
+    if (req.user) {
+      await this.authService.logoutAll(req.user);
+    }
+    return;
   }
 
   @Post('password-reset/request')
@@ -75,29 +90,5 @@ export class AuthController {
   async resetPassword(@Body() dto: ResetPasswordDto) {
     await this.authService.resetPassword(dto.token, dto.newPassword);
     return { message: 'Password reset successful.' };
-  }
-
-  @Post('logout')
-  @UseGuards(RefreshAuthGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async logout(@Req() req) {
-    const refreshToken = req
-      .get('Authorization')
-      ?.replace('Bearer ', '')
-      .trim();
-
-    if (!refreshToken) {
-      throw new UnauthorizedException('No refresh token');
-    }
-
-    return await this.authService.logout(req.user, refreshToken);
-  }
-
-  @Post('logout-all')
-  @UseGuards(RefreshAuthGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async logoutAll(@Req() req) {
-    await this.authService.logoutAll(req.user);
-    return;
   }
 }

@@ -13,10 +13,10 @@ export class RefreshTokenService {
     expiresAt: Date,
     ip?: string,
     userAgent?: string,
-  ): Promise<void> {
+  ): Promise<{ refreshTokenId: number; token: string }> {
     const hashedToken = await argon2.hash(refreshToken);
 
-    await this.prisma.refreshToken.create({
+    const newRefreshToken = await this.prisma.refreshToken.create({
       data: {
         userId: user.id,
         token: hashedToken,
@@ -25,6 +25,11 @@ export class RefreshTokenService {
         userAgent,
       },
     });
+
+    return {
+      refreshTokenId: newRefreshToken.id,
+      token: refreshToken,
+    };
   }
 
   async findValidToken(userId: number, refreshToken: string) {
@@ -37,9 +42,7 @@ export class RefreshTokenService {
     });
 
     if (tokens.length === 0) {
-      throw new UnauthorizedException(
-        'No valid refresh token found for this user.',
-      );
+      return null;
     }
 
     for (const tokenRecord of tokens) {

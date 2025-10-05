@@ -9,14 +9,16 @@ import { HashService } from './hash.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { AdminRegisterDto } from './dto/admin-register.dto';
 import { JwtService } from '@nestjs/jwt';
-import { Role, User } from '@prisma/client';
+import { UserRole, User } from '@prisma/client';
 import { EmailService } from 'src/email/email.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { AuthJwtPayload } from './types/auth-jwt-payload.type.ts';
+import { AuthJwtPayload } from './types/auth-jwt-payload.type';
 import refreshJwtConfig from './config/refresh-jwt.config';
 import { ConfigType } from '@nestjs/config';
 import { RefreshTokenService } from './refresh-token.service';
 import { randomBytes } from 'crypto';
+import { RefreshToken } from '@prisma/client';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -36,7 +38,6 @@ export class AuthService {
       email: data.email,
       username: data.username,
       password: hashedPassword,
-      role: null,
     });
   }
 
@@ -45,7 +46,7 @@ export class AuthService {
     return this.usersService.createUser({
       email: data.email,
       username: data.username,
-      role: Role.ADMIN,
+      role: UserRole.ADMIN,
       password: hashedPassword,
     });
   }
@@ -66,12 +67,9 @@ export class AuthService {
   async login(user: User, ip?: string, userAgent?: string) {
     const payload: AuthJwtPayload = {
       sub: user.id,
-      ...(user.role === 'ADMIN' && { role: user.role }),
+      role: user.role,
+      refresh_token_id: 0,
     };
-
-    const accessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '1h',
-    });
 
     const refreshToken = await this.jwtService.signAsync(
       payload,
@@ -80,16 +78,23 @@ export class AuthService {
 
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
 
-    await this.refreshTokenService.storeRefreshToken(
-      user,
-      refreshToken,
-      expiresAt,
-      ip,
-      userAgent,
-    );
+    const storedToken: { refreshTokenId: number; token: string } =
+      await this.refreshTokenService.storeRefreshToken(
+        user,
+        refreshToken,
+        expiresAt,
+        ip,
+        userAgent,
+      );
+
+    payload.refresh_token_id = storedToken.refreshTokenId;
+
+    const newAccessToken = await this.jwtService.signAsync(payload, {
+      expiresIn: '1h',
+    });
 
     return {
-      access_token: accessToken,
+      access_token: newAccessToken,
       refresh_token: refreshToken,
       token_type: 'Bearer',
       expires_in: 3600,
@@ -98,17 +103,18 @@ export class AuthService {
   }
 
   async refresh(
-    user: { id: number; role: Role | null },
+    user: { id: number; role: UserRole; refresh_token_id: number },
     currentRefreshToken: string,
     ip?: string,
     userAgent?: string,
   ) {
     const fullUser = await this.usersService.findUserById(user.id);
 
-    const storedRefreshToken = await this.refreshTokenService.findValidToken(
-      fullUser.id,
-      currentRefreshToken,
-    );
+    const storedRefreshToken: RefreshToken | null =
+      await this.refreshTokenService.findValidToken(
+        fullUser.id,
+        currentRefreshToken,
+      );
     if (!storedRefreshToken) {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
@@ -117,25 +123,29 @@ export class AuthService {
 
     const payload: AuthJwtPayload = {
       sub: fullUser.id,
-      ...(fullUser.role === 'ADMIN' && { role: fullUser.role }),
+      role: user.role,
+      refresh_token_id: 0,
     };
 
-    const newAccessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '1h',
-    });
     const newRefreshToken = await this.jwtService.signAsync(
       payload,
       this.refreshTokenConfig,
     );
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
 
-    await this.refreshTokenService.storeRefreshToken(
+    const storedToken = await this.refreshTokenService.storeRefreshToken(
       fullUser,
       newRefreshToken,
       expiresAt,
       ip,
       userAgent,
     );
+
+    payload.refresh_token_id = storedToken.refreshTokenId;
+
+    const newAccessToken = await this.jwtService.signAsync(payload, {
+      expiresIn: '1h',
+    });
 
     return {
       access_token: newAccessToken,
@@ -144,6 +154,19 @@ export class AuthService {
       expires_in: 3600,
       user: fullUser,
     };
+  }
+
+  async logout(user: { id: number; role: UserRole; refresh_token_id: number }) {
+    if (!user.refresh_token_id) {
+      throw new UnauthorizedException('Refresh token ID is missing');
+    }
+    await this.refreshTokenService.revokeTokenById(user.refresh_token_id);
+    return { message: 'Successfully logged out' };
+  }
+
+  async logoutAll(user: { id: number; role: UserRole }) {
+    await this.refreshTokenService.revokeAllTokensForUser(user.id);
+    return { message: 'Logged out from all devices' };
   }
 
   async requestPasswordReset(email: string): Promise<void> {
@@ -209,23 +232,5 @@ export class AuthService {
         data: { used: true },
       }),
     ]);
-  }
-
-  async logout(user: User, refreshToken: string) {
-    const stored = await this.refreshTokenService.findValidToken(
-      user.id,
-      refreshToken,
-    );
-
-    if (stored) {
-      await this.refreshTokenService.revokeTokenById(stored.id);
-    }
-
-    return { message: 'Successfully logged out' };
-  }
-
-  async logoutAll(user: User) {
-    await this.refreshTokenService.revokeAllTokensForUser(user.id);
-    return { message: 'Logged out from all devices' };
   }
 }

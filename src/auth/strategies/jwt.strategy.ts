@@ -1,15 +1,11 @@
-import {
-  Injectable,
-  Inject,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigType } from '@nestjs/config';
 import jwtConfig from '../config/jwt.config';
-import { AuthJwtPayload } from '../types/auth-jwt-payload.type.ts';
+import { AuthJwtPayload } from '../types/auth-jwt-payload.type';
 import { UsersService } from 'src/users/users.service';
+import { UserRole } from '@prisma/client';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -30,21 +26,24 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: AuthJwtPayload) {
-    let user;
-    try {
-      user = await this.usersService.findUserById(payload.sub);
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new UnauthorizedException(
-          'Authentication failed: User not found or invalid token.',
-        );
-      }
-      throw error;
+  async validate(payload: AuthJwtPayload): Promise<{
+    id: number;
+    role: UserRole;
+    isOrganizer: boolean;
+    isAttendee: boolean;
+  }> {
+    const user = await this.usersService.findUserById(payload.sub);
+
+    if (!user) {
+      throw new UnauthorizedException(
+        'Authentication failed: User not found or Invalid token.',
+      );
     }
 
-    const isOrganizer = await this.usersService.hasCreatedEvents(user.id);
-    const isAttendee = await this.usersService.hasRegisteredForEvents(user.id);
+    const [isOrganizer, isAttendee] = await Promise.all([
+      this.usersService.hasCreatedEvents(user.id),
+      this.usersService.hasRegisteredForEvents(user.id),
+    ]);
 
     return {
       id: user.id,

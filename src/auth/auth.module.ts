@@ -9,7 +9,7 @@ import jwtConfig from './config/jwt.config';
 import { ConfigModule } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import refreshJwtConfig from './config/refresh-jwt.config';
-import { RefreshJwtStrategy } from './strategies/refresh-token.strategy';
+import { RefreshJwtStrategy } from './strategies/refresh-jwt.strategy';
 import { RefreshTokenService } from './refresh-token.service';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { PasswordResetCleanupService } from './password-reset-cleanup.service';
