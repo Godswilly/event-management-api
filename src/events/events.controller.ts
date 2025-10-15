@@ -65,6 +65,7 @@ export class EventsController {
 
     return this.eventsService.deleteEvent(id, userId);
   }
+  
 
   @UseGuards(JwtAuthGuard)
   @Get('/organizer/mine')
